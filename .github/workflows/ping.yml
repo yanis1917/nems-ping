@@ -1,9 +1,11 @@
 name: Keep Nems awake
 
+# Render free = 750 h/month for the whole workspace. Nems is kept awake 19 h a day
+# (06:00-01:00 Algeria time) = ~570 h, leaving the rest for Nems Ticket, which wakes on demand.
 on:
   schedule:
-    - cron: "*/10 * * * *"   # every 10 minutes (Render free sleeps after 15 min idle)
-    - cron: "0 3 1,15 * *"   # twice a month: keep this repo active so GitHub keeps the schedule on
+    - cron: "*/10 5-23 * * *"  # every 10 min, 05:00-23:59 UTC = 06:00-00:59 Algeria
+    - cron: "0 3 1,15 * *"     # twice a month: keep this repo active so GitHub keeps the schedule on
   workflow_dispatch:
 
 permissions:
@@ -11,15 +13,14 @@ permissions:
 
 jobs:
   ping:
+    if: github.event.schedule != '0 3 1,15 * *'
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
       - name: Ping the site
         run: |
-          for url in https://nems-i47a.onrender.com/ https://yalidine-colis-voob.onrender.com/healthz ; do
-            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 90 "$url" || echo 000)
-            echo "$url -> $code"
-          done
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 90 https://nems-i47a.onrender.com/ || echo 000)
+          echo "https://nems-i47a.onrender.com/ -> $code"
 
   keep-active:
     if: github.event.schedule == '0 3 1,15 * *' || github.event_name == 'workflow_dispatch'
