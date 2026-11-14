@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Ping the site
         run: |
-          for url in https://nems-i47a.onrender.com/ ; do
+          for url in https://nems-i47a.onrender.com/ https://yalidine-colis-voob.onrender.com/healthz ; do
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 90 "$url" || echo 000)
             echo "$url -> $code"
           done
