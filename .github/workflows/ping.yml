@@ -1,0 +1,37 @@
+name: Keep Nems awake
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # every 10 minutes (Render free sleeps after 15 min idle)
+    - cron: "0 3 1,15 * *"   # twice a month: keep this repo active so GitHub keeps the schedule on
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ping the site
+        run: |
+          for url in https://nems-i47a.onrender.com/ ; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 90 "$url" || echo 000)
+            echo "$url -> $code"
+          done
+
+  keep-active:
+    if: github.event.schedule == '0 3 1,15 * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record heartbeat
+        run: |
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > last-alive.txt
+          git config user.name "nems-ping"
+          git config user.email "actions@users.noreply.github.com"
+          git add last-alive.txt
+          git commit -m "heartbeat" || exit 0
+          git push
